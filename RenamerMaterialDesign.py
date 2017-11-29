@@ -2,7 +2,7 @@
 """
 RenamerMaterialDesign.py - Renaming your Android assets the easy way.
 
-usage: python RenamerMaterialDesign.py [-h] -p PATH -f FILENAME
+usage: python RenamerMaterialDesign.py [-h] -p PATH -f FILENAME [-d DESTINATION]
 """
 import argparse
 import os
@@ -16,16 +16,32 @@ if __name__ == '__main__':
                         dest="path")
     parser.add_argument("-f", "--filename", help="Asset new filename pattern.",
                         required=True, dest="filename")
+    parser.add_argument("-d", "--destination", help="Asset new path", required=False,
+                        dest="destination")
     args = parser.parse_args()
 
     if args.path and args.filename:
-        if not os.path.isdir(args.path):
-            print "ERROR: Can't find path: " + args.path
+
+        path = os.path.abspath(args.path) + '/'
+        destination_path = os.getcwd() + '/'
+
+        if not os.path.isdir(path):
+            print "ERROR: Can't find path: " + path
             sys.exit(-1)
 
-        if not os.access(args.path, os.W_OK):
-            print "ERROR: " + args.path + " is not writable."
+        if not os.access(path, os.W_OK):
+            print "ERROR: " + path + " is not writable."
             sys.exit(-1)
+
+        if args.destination is not None:
+            if not os.path.isdir(args.destination):
+                print "ERROR: Can't find destination path: " + path
+                sys.exit(-1)
+
+            if not os.access(args.destination, os.W_OK):
+                print "ERROR: " + args.destination + " is not writable."
+                sys.exit(-1)
+            destination_path = os.path.abspath(args.destination) + '/'
 
         size = {
             'drawable-mdpi': args.filename + '.',
@@ -35,15 +51,16 @@ if __name__ == '__main__':
             'drawable-xxxhdpi': args.filename + '@4x.'
         }
 
-        print args.path  # Selected path
+        print 'We are looking the directory from: ' + path  # Selected path
+        print 'We are gonna put the files in this location: ' + destination_path  # Selected destination
 
-        for directory in os.listdir(args.path):
-            if directory[0] == '.':
+        for directory in os.listdir(path):
+            if directory[0] == '.' or "drawable" not in directory:
                 continue
             print directory  # Current directory
             print size[directory]
-            for asset in os.listdir(args.path + directory):
+            for asset in os.listdir(path + directory):
                 name = asset.split('.')
-                os.rename(args.path + directory + '/' + asset,
-                          args.path + size[directory] + name[1])
+                os.rename(path + directory + '/' + asset,
+                          destination_path + size[directory] + name[1])
         sys.exit(0)  # Everything run OK
